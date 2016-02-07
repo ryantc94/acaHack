@@ -17,32 +17,44 @@ today = datetime.date.today()
 today = today.strftime("%Y%m%d")
 # creat database and collection
 db1 = client['ACAHack']
-col = 'formulary_' + today
+col = 'plan_' + today
 
 
 #open file
-records = pe.get_records(file_name="machine-readable-url-puf.xlsx")
+records = pe.get_records(file_name="a.xlsx")
 counter = 0
 for record in records:
-    url = record["URL Submitted"]
-    if ".json" in url:
+    try:
+        url = record["URL Submitted"]
+        if ".json" in url and url!="http://www.healthnet.com/static/hhs_az_json_20439/index.json":
+            #print url
+            response = urllib.urlopen(url)
+            data = json.loads(response.read())
 
-        response = urllib.urlopen(url)
-        data = json.loads(response.read())
-
-        for url2 in data["plan_urls"]:
-            if ".json" in url2 and url2 !="https://www.dentegra.com/hcx/plans.json":
-                response2 = urllib.urlopen(url2)
+            for url2 in data["plan_urls"]:
                 try:
-                        ILLINOISCHECKER = item["plan_id"]
-                        if "IL" in ILLINOISCHECKER:
-                            newdic = {"plan_id": item["plan_id"]}
-                            newdic ["marketing_name"]= item["marketing_name"]
-                            newdic["summary_url"]= item["summary_url"]
-                            newdic["plan_contact"] = item["plan_contact"]
-                            print newdic
-                except ValueError:
-                    print url2
+                    if ".json" in url2:
+                        response2 = urllib.urlopen(url2)
+                        dic = ujson.loads(response2.read())
+
+                        for item in dic:
+                            try:
+                                    ILLINOISCHECKER = item["plan_id"]
+                                    if "IL" in ILLINOISCHECKER:
+                                        newdic = {"plan_id": item["plan_id"]}
+                                        newdic ["marketing_name"]= item["marketing_name"]
+                                        newdic["summary_url"]= item["summary_url"]
+                                        newdic["plan_contact"] = item["plan_contact"]
+                                        db1[col].insert(newdic)
+
+                            except ValueError:
+                                print url2
+                            except socket.error as e: 
+                                continue
+                except:
+                    continue
+    except:
+        continue
 
 
             #     try:
